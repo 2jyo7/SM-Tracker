@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.bg-gradient-col {
+  @apply bg-gradient-to-br from-green-900 via-purple-800 to-white;
+}
