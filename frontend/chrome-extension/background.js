@@ -1,5 +1,23 @@
 let activeTab = "";
 let startTime = Date.now();
+let userId = null;
+
+getUserId();
+
+// Example of getting user info
+async function getUserId() {
+  try {
+    const response = await fetch("http://localhost:4200/api/me", {
+      credentials: "include", // 👈 Important: sends the cookie!
+    });
+
+    const data = await response.json();
+    userId = data.id;
+    console.log("Logged-in User ID:", userId);
+  } catch (err) {
+    console.error("Failed to get user ID:", err);
+  }
+}
 
 // Track tab activation
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
@@ -42,7 +60,7 @@ async function trackWebsite(url) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: 12, // ✅ Replace this function with actual user retrieval logic
+          userId, // ✅ Replace this function with actual user retrieval logic
           website: activeTab,
           duration: duration,
         }),

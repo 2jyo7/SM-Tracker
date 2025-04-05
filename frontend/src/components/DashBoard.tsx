@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
-import API from "../utils/api";
+import { useEffect, useState, useCallback } from "react";
 import { FaHourglassHalf, FaRegCalendarAlt } from "react-icons/fa";
 import { EarthLock } from "lucide-react";
+import API from "@/utils/api";
 
 interface TrackingRecord {
   id: number;
@@ -15,23 +15,24 @@ const DashboardPage = () => {
   const [records, setRecords] = useState<TrackingRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
-  const [alerts, setAlerts] = useState<string[]>([]);
+  const [alerts, setAlerts] = useState<number[]>([]);
+
+  const fetchRecords = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const { data } = await API.get<TrackingRecord[]>("/records");
+      setRecords(data);
+    } catch (err) {
+      console.error("Error fetching records:", err);
+      setError("Failed to fetch records. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchRecords = async (): Promise<void> => {
-      try {
-        const { data } = await API.get<TrackingRecord[]>("/records");
-        setRecords(data);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(`Error fetching records: ${err.message}`);
-        } else {
-          setError("An unknown error occurred");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchRecords();
   }, []);
 
@@ -45,110 +46,120 @@ const DashboardPage = () => {
     }
   }, []);
 
-  useEffect(() => {
-    const checkTimeLimit = () => {
-      records.forEach((record) => {
-        if (record.duration >= 60) {
-          showNotification(record.website);
-          addAlert(record.website);
-        }
-      });
-    };
+  const checkTimeLimit = useCallback(() => {
+    records.forEach((record) => {
+      if (record.duration >= 60 && !alerts.includes(record.id)) {
+        showNotification(record);
+        setAlerts((prev) => [...prev, record.id]);
+      }
+    });
+  }, [records, alerts]);
 
+  useEffect(() => {
     const interval = setInterval(checkTimeLimit, 60000);
     return () => clearInterval(interval);
-  }, [records]);
+  }, [checkTimeLimit]);
 
-  const showNotification = (website: string) => {
-    if (Notification.permission === "granted") {
+  const showNotification = (record: TrackingRecord) => {
+    if (
+      Notification.permission === "granted" &&
+      document.visibilityState === "visible"
+    ) {
       new Notification("Time Limit Exceeded", {
-        body: `You've been on ${website} for over an hour!`,
+        body: `You've been on ${record.website} for over ${record.duration} minutes!`,
         icon: "/alert-icon.png",
       });
     }
     const sound = new Audio("/alertS.mp3");
-    sound.play();
+    sound.play().catch((err) => console.error("Error playing sound:", err));
   };
 
-  const addAlert = (website: string) => {
-    if (!alerts.includes(website)) {
-      setAlerts((prevAlerts) => [...prevAlerts, website]);
-    }
-  };
-
-  const removeAlert = (website: string) => {
-    setAlerts((prevAlerts) => prevAlerts.filter((alert) => alert !== website));
+  const removeAlert = (id: number) => {
+    setAlerts((prev) => prev.filter((alert) => alert !== id));
   };
 
   const handleRemRecs = async (id: number) => {
     try {
       await API.delete(`/records/${id}`);
-      setRecords(records.filter((record) => record.id !== id));
-    } catch (error) {
-      console.error("Failed to delete record:", error);
+      fetchRecords();
+    } catch (err) {
+      console.error("Failed to delete record:", err);
     }
   };
 
   return (
-    <section className="py-12 px-6 bg-gray-100 min-h-screen">
-      {alerts.length > 0 && (
-        <div className="fixed top-0 left-0 w-full bg-red-600 text-white text-center p-4 shadow-md z-50">
-          {alerts.map((alert, index) => (
-            <div key={index} className="flex justify-between items-center px-6">
-              <span>⚠️ You&apos;ve been on {alert} for over an hour!</span>
-              <button
-                onClick={() => removeAlert(alert)}
-                className="ml-4 px-3 py-1 bg-white text-red-600 rounded-md hover:bg-gray-200 transition"
-              >
-                Dismiss
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+    <section className="py-12 px-4 sm:px-6 md:px-8 bg-gray-100 min-h-screen md:ml-64 transition-all">
+      <div className="max-w-7xl mx-auto">
+        {alerts.length > 0 && (
+          <div className="fixed top-0 left-0 w-full bg-red-600 text-white text-sm sm:text-base p-4 shadow-md z-50">
+            {alerts.map((alertId) => {
+              const record = records.find((r) => r.id === alertId);
+              if (!record) return null;
+              return (
+                <div
+                  key={alertId}
+                  className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-2 sm:px-6"
+                >
+                  <span>
+                    ⚠️ You&apos;ve been on {record.website} for over an hour!
+                  </span>
+                  <button
+                    onClick={() => removeAlert(alertId)}
+                    className="px-3 py-1 bg-white text-red-600 rounded-md hover:bg-gray-200 transition"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-      <h2 className="text-3xl font-semibold text-center text-gray-800 mb-6">
-        📊 Tracking Data
-      </h2>
+        <h2 className="text-2xl sm:text-3xl font-semibold text-center text-gray-800 mb-6">
+          📊 Tracking Data
+        </h2>
 
-      {loading && (
-        <p className="text-center text-lg font-semibold">Loading...</p>
-      )}
-      {error && <p className="text-center text-red-500 text-lg">{error}</p>}
+        {loading && (
+          <p className="text-center text-lg font-semibold">Loading...</p>
+        )}
+        {error && <p className="text-center text-red-500 text-lg">{error}</p>}
 
-      <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-4 md:px-8 w-full bg-gradient-col py-8">
-        {records.map((record) => (
-          <li
-            key={record.id}
-            className="p-6 bg-white shadow-lg rounded-xl border border-gray-200 flex flex-col items-start space-y-3"
-          >
-            <p className="text-base font-medium text-gray-700 flex items-center">
-              <EarthLock className="text-red-900 mr-2" />
-              <span className="font-semibold text-gray-900">Website:</span>{" "}
-              {record.website}
-            </p>
-            <p className="text-base font-medium text-gray-700 flex items-center">
-              <FaRegCalendarAlt className="text-red-900 mr-2" />
-              <span className="font-semibold text-gray-900">Date:</span>{" "}
-              {new Date(record.created_at).toLocaleString()}
-            </p>
-            <p className="text-base font-medium text-gray-700 flex items-center">
-              <FaHourglassHalf className="text-red-900 mr-2" />
-              <span className="font-semibold text-gray-900">
-                Duration:
-              </span>{" "}
-              {record.duration} min
-            </p>
-
-            <button
-              onClick={() => handleRemRecs(record.id)}
-              className="mt-4 px-5 py-2 bg-red-500 text-white font-medium rounded-lg shadow-md transition hover:bg-red-600"
+        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full py-6">
+          {records.map((record) => (
+            <li
+              key={record.id}
+              className="p-5 bg-white shadow-md rounded-xl border border-gray-200 flex flex-col items-start space-y-3"
             >
-              Remove
-            </button>
-          </li>
-        ))}
-      </ul>
+              <p className="text-sm sm:text-base font-medium text-gray-700 flex items-center">
+                <EarthLock className="text-red-900 mr-2" />
+                <span className="font-semibold text-gray-900">
+                  Website:
+                </span>{" "}
+                {record.website}
+              </p>
+              <p className="text-sm sm:text-base font-medium text-gray-700 flex items-center">
+                <FaRegCalendarAlt className="text-red-900 mr-2" />
+                <span className="font-semibold text-gray-900">Date:</span>{" "}
+                {new Date(record.created_at).toLocaleString()}
+              </p>
+              <p className="text-sm sm:text-base font-medium text-gray-700 flex items-center">
+                <FaHourglassHalf className="text-red-900 mr-2" />
+                <span className="font-semibold text-gray-900">
+                  Duration:
+                </span>{" "}
+                {record.duration} min
+              </p>
+
+              <button
+                onClick={() => handleRemRecs(record.id)}
+                className="mt-4 px-4 py-2 bg-red-500 text-white font-medium rounded-lg shadow-sm transition hover:bg-red-600 text-sm sm:text-base"
+              >
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 };

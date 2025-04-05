@@ -1,35 +1,52 @@
 "use client";
 import { useState } from "react";
-import API from "../utils/api";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import API from "@/utils/api";
 
 const AuthFormPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState(""); // Only for signup
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("User");
   const [error, setError] = useState("");
   const router = useRouter();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(""); // Clear errors before submitting
+    setError("");
 
     try {
-      const endpoint = isLogin ? "/login" : "/register";
-      const payload = isLogin ? { email, password } : { name, email, password };
+      const endpoint = isLogin ? "/login" : "/signup";
+      const payload = isLogin
+        ? { email, password }
+        : { name, email, password, role };
 
-      const { data } = await API.post(endpoint, payload);
-      localStorage.setItem("token", data.token); // Save token
+      // ✅ Send request with cookies
+      const data = await API.post(endpoint, payload, { withCredentials: true });
+      console.log(data);
+      // ✅ Reset form fields
+      setEmail("");
+      setPassword("");
+      setName("");
+      setRole("User");
 
-      router.push("/dashboard"); // Redirect after login/signup
+      if (isLogin) {
+        router.push("/dashboard");
+      } else {
+        // ✅ Better UX: Small delay before switching to login
+        setTimeout(() => {
+          setIsLogin(true);
+        }, 500);
+        router.push("/auth");
+      }
     } catch (err) {
+      console.error("Authentication error:", err);
+
       if (axios.isAxiosError(err)) {
-        // If the error comes from Axios
         setError(err.response?.data?.message || "Something went wrong");
       } else if (err instanceof Error) {
-        // If it's a standard JavaScript Error
         setError(err.message);
       } else {
         setError("An unknown error occurred");
@@ -54,6 +71,7 @@ const AuthFormPage = () => {
                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                required
               />
             </div>
           )}
@@ -65,6 +83,7 @@ const AuthFormPage = () => {
               className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
           <div>
@@ -75,9 +94,26 @@ const AuthFormPage = () => {
               className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
-          <button className="bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700">
+          {!isLogin && (
+            <div>
+              <label className="block mb-1 font-medium">Role:</label>
+              <select
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="User">User</option>
+                <option value="Admin">Admin</option>
+              </select>
+            </div>
+          )}
+          <button
+            type="submit"
+            className="bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700"
+          >
             {isLogin ? "Login" : "Sign Up"}
           </button>
         </form>

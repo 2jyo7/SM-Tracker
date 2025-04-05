@@ -4,9 +4,9 @@ import React from "react";
 
 export default function Home() {
   return (
-    <div className="flex flex-col h-screen">
-      {/* Right Side Content */}
-      <div className="md:ml-64 justify-center items-center h-screen md:w-[calc(100%-16rem)] ">
+    <div className="relative bg-gray-50 min-h-screen ">
+      {/* Content area shifted right by sidebar width */}
+      <div className="ml-64 p-6">
         <HomePage />
         <AppLists />
       </div>

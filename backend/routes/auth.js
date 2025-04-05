@@ -3,152 +3,115 @@ const dbConnect = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
-const authenticateToken = require("../middleware/authMiddleware");
 
 dotenv.config();
-
 const router = express.Router();
 
 // Welcome Route
 router.get("/", (req, res) => {
-  res.status(200).json({
-    message: "Welcome to the SM-TRACKER! We are here to help you.",
-  });
-});
-///////////////// Sign Up CRUD Routes ///////////////////
-// Get All Users
-router.get("/getUser", authenticateToken, (req, res) => {
-  const getUQuery = `SELECT * FROM users`;
-
-  dbConnect.query(getUQuery, (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: "Database error", details: err });
-    }
-    res
-      .status(200)
-      .json({ message: "Users retrieved successfully", data: result });
-  });
+  res
+    .status(200)
+    .json({ message: "Welcome to the SM-TRACKER! We are here to help you." });
 });
 
-// Create User
-router.post("/creatingUser", async (req, res) => {
-  const { name, email, password, admin } = req.body;
+///////////////// Sign Up Route ///////////////////
+router.post("/signup", async (req, res) => {
+  const { name, email, password, role } = req.body;
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
+    const query = `INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`;
 
-    const postUQuery = `INSERT INTO users (name, email, password, admin) VALUES (?, ?, ?, ?)`;
     dbConnect.query(
-      postUQuery,
-      [name, email, hashedPassword, admin],
+      query,
+      [name, email, hashedPassword, role],
       (err, result) => {
-        if (err) {
+        if (err)
           return res
             .status(500)
             .json({ error: "Database error", details: err });
-        }
+
         res
           .status(201)
-          .json({ message: "User created successfully", data: result });
+          .json({ message: "User created successfully. Please login." });
       }
     );
   } catch (err) {
-    res.status(500).json({ error: "Server error", details: err });
-  }
-});
-
-// Update User
-router.put("/updateUser/:id", async (req, res) => {
-  const { id } = req.params;
-  const { name, email, password, admin } = req.body;
-
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const updateUQuery = `UPDATE users SET name = ?, email = ?, password = ?, admin = ? WHERE id = ?`;
-    dbConnect.query(
-      updateUQuery,
-      [name, email, hashedPassword, admin, id],
-      (err, result) => {
-        if (err) {
-          return res
-            .status(500)
-            .json({ error: "Database error", details: err });
-        }
-        res
-          .status(202)
-          .json({ message: "User updated successfully", data: result });
-      }
-    );
-  } catch (err) {
-    res.status(500).json({ error: "Server error", details: err });
-  }
-});
-
-// Delete User
-router.delete("/deleteUser/:id", (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const deleteUQuery = `DELETE FROM users WHERE id = ?`;
-    dbConnect.query(deleteUQuery, [id], (err, result) => {
-      if (err) {
-        return res.status(500).json({ error: "Database error", details: err });
-      }
-      res
-        .status(200)
-        .json({ message: "User deleted successfully", data: result });
-    });
-  } catch (error) {
     res.status(500).json({ error: "Server error", details: err });
   }
 });
 
 ////////////////// Login Route ///////////////////////
-
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
   try {
+    // console.log("🔹 Incoming request to /login");
+
     const { email, password } = req.body;
+    // console.log("🔹 Request Body:", req.body);
 
-    const loginSqlQuery = `SELECT * FROM users WHERE email = ?`;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
 
-    dbConnect.query(loginSqlQuery, [email], async (err, result) => {
-      if (err) {
-        return res.status(500).json({ error: "Database error", details: err });
-      }
-      if (result.length === 0) {
-        return res.status(400).json({ message: "Invalid Credentials" });
-      }
+    // console.log("✅ Email and Password received:", email);
 
-      const user = result[0];
+    const query = "SELECT * FROM users WHERE email = ?";
+    // console.log("🔹 Executing Query:", query, "with params:", email);
 
-      // ✅ Corrected bcrypt.compare() inside the callback
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: "Invalid credentials" });
-      }
+    // ✅ Use promise-based connection
+    const [result] = await dbConnect.query(query, [email]);
 
-      // ✅ Corrected JWT_SECRET name
-      const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.admin },
-        process.env.JWT_SECRET,
-        { expiresIn: "2h" }
-      );
+    // console.log("✅ Query Result:", result);
 
-      // ✅ Removed unnecessary token check
-      res.json({
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.admin,
-        },
-      });
+    if (result.length === 0) {
+      return res.status(400).json({ message: "Invalid Credentials" });
+    }
+
+    const user = result[0];
+    // console.log("✅ User Found:", user);
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "2h" }
+    );
+
+    // console.log("✅ Token Generated:", token);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 2 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (error) {
-    res.status(500).json({ error: "Server error", details: error });
+    console.error("❌ Error in /login route:", error);
+    res.status(500).json({ error: "Internal Server Error", details: error });
   }
+});
+
+////////////////// Logout Route ///////////////////////
+router.post("/logout", (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+  });
+  res.json({ message: "Logged out successfully" });
 });
 
 module.exports = router;

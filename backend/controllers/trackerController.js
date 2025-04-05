@@ -1,8 +1,15 @@
 const Tracker = require("../models/trackerModel");
 
+// ✅ Get records (only for logged-in users)
 exports.getRecords = async (req, res) => {
+  const userId = req.user.id; // Get user ID from token
+
+  if (!userId) {
+    return res.status(403).json({ message: "Unauthorized access" });
+  }
+
   try {
-    const records = await Tracker.getAllRecords();
+    const records = await Tracker.getRecordsByUserId(userId); // Fetch only user's records
     res.status(200).json(records);
   } catch (error) {
     console.error("Error fetching records:", error);
@@ -10,15 +17,16 @@ exports.getRecords = async (req, res) => {
   }
 };
 
+// ✅ Add record (public - anyone can add a record)
 exports.addRecord = async (req, res) => {
   let { userId, website, duration } = req.body;
 
-  // Ensure `userId` is a number
+  // Ensure `userId` & `duration` are numbers
   userId = parseInt(userId);
   duration = parseInt(duration);
 
   if (!userId || !website || !duration) {
-    console.log("Invalid users credentials:" + userId, website, duration);
+    console.log("Invalid data:", userId, website, duration);
     return res.status(400).json({ message: "All fields are required" });
   }
 
@@ -31,8 +39,14 @@ exports.addRecord = async (req, res) => {
   }
 };
 
+// ✅ Delete record (only Admins can delete)
 exports.deleteRecord = async (req, res) => {
   const { id } = req.params;
+  const userRole = req.user.role;
+
+  if (userRole !== "Admin") {
+    return res.status(403).json({ message: "Only Admins can delete records" });
+  }
 
   if (!id) {
     return res.status(400).json({ message: "ID is required" });
