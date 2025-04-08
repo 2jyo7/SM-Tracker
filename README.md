@@ -1,17 +1,18 @@
 # SMTracker - Social Media Time Tracker
 
-SMTracker is a **real-time web application** that helps users monitor their social media usage and get notified when they exceed predefined time limits. The app tracks browser activity, displays usage statistics, and provides alerts when a user spends too much time on social media websites.
+**SMTracker** is a **real-time web application** that empowers users to monitor and manage their time spent on social media platforms. With smart tracking, alerts, and a clean dashboard, it's perfect for anyone looking to build healthier digital habits.
 
 ---
 
 ## 🚀 Features
 
-✅ **Real-time Social Media Tracking** - Automatically logs time spent on tracked websites.
-✅ **User Notifications** - Alerts users when they exceed the time limit with in-app banners & sound notifications.
-✅ **Intuitive Dashboard** - Displays tracked records, including website, duration, and date.
-✅ **Data Persistence** - Stores tracking history using a MySQL database.
-✅ **Easy Deletion** - Users can remove tracking records manually.
-✅ **Modern UI** - Built with Next.js and Tailwind CSS for a sleek design.
+- ✅ **Real-time Social Media Tracking** — Monitors time spent on selected websites in the background.
+- ✅ **User Notifications** — Sends banner alerts and plays sound when a user exceeds their time limit.
+- ✅ **Responsive & Fixed Sidebar UI** — Clean navigation layout that adapts across devices.
+- ✅ **Intuitive Dashboard** — Displays records with website names, time duration, and dates.
+- ✅ **Manual Deletion** — Easily remove tracking records with role-based access.
+- ✅ **Admin Authorization** — Only admin users can delete records securely.
+- ✅ **Modern Design** — Built with **Next.js 14**, **React**, and **Tailwind CSS** for a sleek and fast user experience.
 
 ---
 
@@ -19,83 +20,86 @@ SMTracker is a **real-time web application** that helps users monitor their soci
 
 - **Frontend**: Next.js, React, Tailwind CSS
 - **Backend**: Node.js, Express.js
-- **Database**: MySQL (`mysql2` package)
-- **Notifications**: Browser Notifications & Custom Audio Alerts
+- **Database**: MySQL (using `mysql2`)
+- **Authentication**: HTTP-only cookies (role-based access)
+- **Notifications**: Browser APIs + Custom audio alerts
 
 ---
 
-## 🔧 Installation & Setup
+## 📦 Project Structure Highlights
 
-### Prerequisites
-Make sure you have the following installed:
+- 🔐 Secure API routes with role-based deletion (`admin` only)
+- 🧭 Fixed sidebar for large screens and responsive hamburger menu for mobile
+- 🎯 Modular components (`Sidebar`, `HeroSec`, `AppLists`, etc.)
+
+---
+
+## ⚙️ Installation & Setup
+
+### ✅ Prerequisites
+Ensure you have the following installed:
+
 - [Node.js](https://nodejs.org/)
 - [MySQL](https://www.mysql.com/)
 
-### 1️⃣ Clone the repository:
-```sh
- git clone https://github.com/your-username/SMTracker.git
- cd SMTracker
-```
+### 1️⃣ Clone the repository
 
-### 2️⃣ Install dependencies:
-```sh
- npm install
-```
+git clone https://github.com/your-username/SMTracker.git
+cd SMTracker
+2️⃣ Install dependencies
 
-### 3️⃣ Set up environment variables:
-Create a `.env` file and add the following:
-```env
+npm install
+3️⃣ Set up environment variables
+Create a .env file at the root with the following:
+
 DATABASE_URL=mysql://user:password@localhost:3306/smtracker_db
 NEXT_PUBLIC_API_URL=http://localhost:5000
-```
+JWT_SECRET=your_super_secret_key
+4️⃣ Start the development servers
+Frontend:
 
-### 4️⃣ Start the development server:
-```sh
- npm run dev
-```
+npm run dev
+Backend:
 
-### 5️⃣ Start the backend server:
-```sh
- npm run start:server
-```
+npm run start:server
+🖥️ How to Use
+Open the application and grant browser notification permissions.
 
----
+Navigate the web as usual — SMTracker runs in the background.
 
-## 🖥️ Usage
+Receive alerts when your session exceeds the time limit.
 
-1. **Open the app** and allow notification permissions.
-2. **Track usage** automatically when browsing social media.
-3. **Receive alerts** via banners and sound when exceeding the 1-hour limit.
-4. **View and manage records** from the dashboard.
+Log into the dashboard to view tracked data or remove records (if you're an admin).
 
----
+Mobile users can access a responsive layout with a hamburger menu.
 
-## 📸 Screenshots
+🔐 Admin Access
+Only users with role admin can delete tracking records.
 
-Coming soon...
+Role verification is done securely via cookies and server-side middleware.
 
----
+🧠 Future Enhancements
+ Add full user authentication with JWT & sessions
 
-## 📌 Future Enhancements
+ Weekly/monthly analytics dashboard
 
-- [ ] Add user authentication (Login/Signup)
-- [ ] Provide analytics on weekly/monthly usage trends
-- [ ] Implement dark mode support
+ User-configurable time limits
 
----
+ Dark mode & theme switcher
 
-## 🤝 Contributing
+ Chrome extension integration
 
-Feel free to fork this project and submit a pull request with improvements!
+📸 Screenshots
+Coming soon… ![Screenshot (10)](https://github.com/user-attachments/assets/7f1f2b95-306e-4eda-bf6a-23f670daf709)
+![Screenshot (22)](https://github.com/user-attachments/assets/b9b8775c-6337-43fb-93f8-07df09f22653)
 
----
 
-## 📜 License
+🤝 Contributing
+Pull requests are welcome! If you find a bug or want to improve the app, feel free to fork and contribute.
 
+📜 License
 This project is licensed under the MIT License.
 
----
-
-## ⭐ Show Some Love
-If you like this project, give it a ⭐ on GitHub!
+⭐ Like the Project?
+If this app helped you or inspired you, consider giving it a ⭐ on GitHub!
 
