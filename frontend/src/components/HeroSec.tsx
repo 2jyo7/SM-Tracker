@@ -3,7 +3,7 @@ import React from "react";
 
 const HeroSec = () => {
   return (
-    <section className="py-12 lg:py-24">
+    <section className="">
       <div className="container mx-auto px-6 md:px-8 bg-gray-100 p-10">
         <div className="grid md:grid-cols-2">
           <div className="flex flex-col justify-center items-center w-full p-2 ">

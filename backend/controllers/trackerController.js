@@ -42,9 +42,9 @@ exports.addRecord = async (req, res) => {
 // ✅ Delete record (only Admins can delete)
 exports.deleteRecord = async (req, res) => {
   const { id } = req.params;
-  const userRole = req.user.role;
-
-  if (userRole !== "Admin") {
+  const userRole = req.user?.role;
+  console.log(userRole);
+  if (userRole !== "admin") {
     return res.status(403).json({ message: "Only Admins can delete records" });
   }
 

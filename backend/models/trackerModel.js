@@ -58,6 +58,7 @@ const Tracker = {
       );
 
       let result;
+      console.log(result, existing);
 
       if (existing.length > 0) {
         // Step 2a: If exists, update duration
@@ -74,8 +75,10 @@ const Tracker = {
         );
       }
 
+      console.log(result);
+
       connection.release();
-      console.log("Add/Update Record Result:", result);
+      // console.log("Add/Update Record Result:", result);
       return result;
     } catch (error) {
       console.error("Error adding/updating record:", error);

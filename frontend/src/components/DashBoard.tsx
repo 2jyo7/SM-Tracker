@@ -88,7 +88,7 @@ const DashboardPage = () => {
   };
 
   return (
-    <section className="py-12 px-4 sm:px-6 md:px-8 bg-gray-100 min-h-screen md:ml-64 transition-all">
+    <section className="py-12 px-4 sm:px-6 md:px-8 bg-gray-100 min-h-screen transition-all flex w-full justify-center">
       <div className="max-w-7xl mx-auto">
         {alerts.length > 0 && (
           <div className="fixed top-0 left-0 w-full bg-red-600 text-white text-sm sm:text-base p-4 shadow-md z-50">
